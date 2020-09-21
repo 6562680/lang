@@ -1,7 +1,7 @@
 {
     "name": "gzhegow/lang",
     "description": "Multi-language module",
-    "type": "project",
+    "type": "library",
     "authors": [
         {
             "name": "gzhegow",
