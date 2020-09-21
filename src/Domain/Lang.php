@@ -299,6 +299,26 @@ class Lang
 
 
 	/**
+	 * @param array       $words
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @return array
+	 */
+	public function collect(array $words, array $placeholders = [], string $group = null, string $locale = null) : array
+	{
+		$result = [];
+
+		foreach ( $words as $word ) {
+			$result[ mb_substr($word, 1) ] = $this->getOrWord($word, $placeholders, $group, $locale);
+		}
+
+		return $result;
+	}
+
+
+	/**
 	 * @param array $groups
 	 *
 	 * @return void

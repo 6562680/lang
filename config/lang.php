@@ -6,7 +6,7 @@
 	'locale_suffix' => '.UTF-8',
 
 	'locales' => array_map(function ($v) {
-		return array_combine([ 'locale', 'encoding', 'title', 'Native' ], $v);
+		return array_combine([ 'locale', 'encoding', 'title', 'native' ], $v);
 	}, [
 		// 'aa'      => [ 'aa_ER', 'Latn', 'Afar', 'Qafar' ],
 		// 'af'      => [ 'af_ZA', 'Latn', 'Afrikaans', 'Afrikaans' ],

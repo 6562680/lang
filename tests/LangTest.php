@@ -7,8 +7,15 @@ use Gzhegow\Lang\Di\LangProvider;
 use Gzhegow\Lang\Domain\LangService;
 use Gzhegow\Lang\Exceptions\Error\WordNotFoundException;
 
+/**
+ * Class LangTest
+ */
 class LangTest extends AbstractTestCase
 {
+	/**
+	 * @return void
+	 * @throws WordNotFoundException
+	 */
 	public function test1_()
 	{
 		$lang = $this->fixtureLang();
@@ -19,6 +26,9 @@ class LangTest extends AbstractTestCase
 		self::assertEquals('Hello World', $result);
 	}
 
+	/**
+	 * @return void
+	 */
 	public function test2_()
 	{
 		$lang = $this->fixtureLang();
@@ -29,6 +39,9 @@ class LangTest extends AbstractTestCase
 		self::assertEquals(null, $result);
 	}
 
+	/**
+	 * @return void
+	 */
 	public function test3_()
 	{
 		$lang = $this->fixtureLang();
@@ -39,6 +52,9 @@ class LangTest extends AbstractTestCase
 		self::assertEquals('@main.hello.world2', $result);
 	}
 
+	/**
+	 * @return void
+	 */
 	public function test4_()
 	{
 		$lang = $this->fixtureLang();
@@ -49,6 +65,25 @@ class LangTest extends AbstractTestCase
 		self::assertEquals('None', $result);
 	}
 
+	/**
+	 * @return void
+	 */
+	public function test5_()
+	{
+		$lang = $this->fixtureLang();
+
+		$lang->load('main');
+
+		$words = $lang->collect([ '@main.hello.world' ]);
+
+		self::assertEquals('Hello World', $words[ 'main.hello.world' ]);
+	}
+
+
+	/**
+	 * @return void
+	 * @throws WordNotFoundException
+	 */
 	public function testException1_()
 	{
 		$this->expectException(WordNotFoundException::class);

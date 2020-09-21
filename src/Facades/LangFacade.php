@@ -136,6 +136,19 @@ class LangFacade
     }
 
     /**
+     * @param array       $words
+     * @param array       $placeholders
+     * @param string|null $group
+     * @param string|null $locale
+     *
+     * @return array
+     */
+    public static function collect(array $words, array $placeholders = [], string $group = null, string $locale = null) : array
+    {
+        return static::getLang()->collect($words, $placeholders, $group, $locale);
+    }
+
+    /**
      * @param array $groups
      *
      * @return void
