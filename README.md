@@ -27,7 +27,7 @@ $lang->load('main');
 // $lang->get('@main.null'); // @throws
 // $lang->getOrNull('@main.null'); // null
 // $lang->getOrDefault('@main.null', [], 'Text'); // 'Text'
-// $lang->getOrWord('@main.null'); // '@main.hello.world'
+// $lang->getOrWord('@main.null'); // '@main.null'
 
 $lang->get('@main.hello.world'); // 'Hello World'
 $lang->getOrNull('@main.hello.world'); // 'Hello World'
