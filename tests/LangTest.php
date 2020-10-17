@@ -6,6 +6,7 @@ use Gzhegow\Di\Di;
 use Gzhegow\Lang\Di\LangProvider;
 use Gzhegow\Lang\Domain\LangService;
 use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
+use Gzhegow\Lang\Exceptions\Error\LocaleNotFoundError;
 use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 
 /**
@@ -89,6 +90,68 @@ class LangTest extends AbstractTestCase
 
 		self::assertEquals('мира', $lang->choice('@main.label.world', 22));
 		self::assertEquals('мира', $lang->choice('@main.label.world', '22'));
+	}
+
+	/**
+	 * @return void
+	 * @throws LocaleNotFoundError
+	 */
+	public function test4_()
+	{
+		$lang = $this->fixtureLang();
+
+		$lang->setLocaleDefault('en');
+
+		$lang->setLocale('en');
+
+		self::assertEquals('/', $lang->localePath(null, '/'));
+		self::assertEquals('/', $lang->localePath(null, '/en'));
+		self::assertEquals('/', $lang->localePath(null, '/en/'));
+		self::assertEquals('/english', $lang->localePath(null, '/english'));
+		self::assertEquals('/english/', $lang->localePath(null, '/english/'));
+		self::assertEquals('/english', $lang->localePath(null, '/en/english'));
+		self::assertEquals('/english/', $lang->localePath(null, '/en/english/'));
+		self::assertEquals('/russian', $lang->localePath(null, '/russian'));
+		self::assertEquals('/russian/', $lang->localePath(null, '/russian/'));
+		self::assertEquals('/russian', $lang->localePath(null, '/ru/russian'));
+		self::assertEquals('/russian/', $lang->localePath(null, '/ru/russian/'));
+
+		self::assertEquals('/ru/', $lang->localePath('ru', '/'));
+		self::assertEquals('/ru', $lang->localePath('ru', '/en'));
+		self::assertEquals('/ru/', $lang->localePath('ru', '/en/'));
+		self::assertEquals('/ru/english', $lang->localePath('ru', '/english'));
+		self::assertEquals('/ru/english/', $lang->localePath('ru', '/english/'));
+		self::assertEquals('/ru/english', $lang->localePath('ru', '/en/english'));
+		self::assertEquals('/ru/english/', $lang->localePath('ru', '/en/english/'));
+		self::assertEquals('/ru/russian', $lang->localePath('ru', '/russian'));
+		self::assertEquals('/ru/russian', $lang->localePath('ru', '/ru/russian'));
+		self::assertEquals('/ru/russian/', $lang->localePath('ru', '/ru/russian/'));
+
+		$lang->setLocale('ru');
+
+		self::assertEquals('/ru/', $lang->localePath(null, '/'));
+		self::assertEquals('/ru', $lang->localePath(null, '/en'));
+		self::assertEquals('/ru/', $lang->localePath(null, '/en/'));
+		self::assertEquals('/ru/english', $lang->localePath(null, '/english'));
+		self::assertEquals('/ru/english/', $lang->localePath(null, '/english/'));
+		self::assertEquals('/ru/english', $lang->localePath(null, '/en/english'));
+		self::assertEquals('/ru/english/', $lang->localePath(null, '/en/english/'));
+		self::assertEquals('/ru/russian', $lang->localePath(null, '/russian'));
+		self::assertEquals('/ru/russian/', $lang->localePath(null, '/russian/'));
+		self::assertEquals('/ru/russian', $lang->localePath(null, '/ru/russian'));
+		self::assertEquals('/ru/russian/', $lang->localePath(null, '/ru/russian/'));
+
+		self::assertEquals('/', $lang->localePath('en', '/'));
+		self::assertEquals('/', $lang->localePath('en', '/en'));
+		self::assertEquals('/', $lang->localePath('en', '/en/'));
+		self::assertEquals('/english', $lang->localePath('en', '/english'));
+		self::assertEquals('/english/', $lang->localePath('en', '/english/'));
+		self::assertEquals('/english', $lang->localePath('en', '/en/english'));
+		self::assertEquals('/english/', $lang->localePath('en', '/en/english/'));
+		self::assertEquals('/russian', $lang->localePath('en', '/russian'));
+		self::assertEquals('/russian/', $lang->localePath('en', '/russian/'));
+		self::assertEquals('/russian', $lang->localePath('en', '/ru/russian'));
+		self::assertEquals('/russian/', $lang->localePath('en', '/ru/russian/'));
 	}
 
 

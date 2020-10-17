@@ -13,6 +13,11 @@ use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 class FileWordRepo implements WordRepoInterface
 {
 	/**
+	 * @var Str
+	 */
+	protected $str;
+
+	/**
 	 * @var string
 	 */
 	public $path;
@@ -21,14 +26,16 @@ class FileWordRepo implements WordRepoInterface
 	/**
 	 * Constructor
 	 *
+	 * @param Str    $str
 	 * @param string $path
 	 *
-	 * @throws InvalidArgumentException
 	 */
-	public function __construct(string $path)
+	public function __construct(Str $str, string $path)
 	{
+		$this->str = $str;
+
 		if (! is_dir($path)) {
-			throw new InvalidArgumentException('Dir not found: ');
+			throw new InvalidArgumentException('Dir not found', $path);
 		}
 
 		$this->path = $path;
@@ -44,8 +51,6 @@ class FileWordRepo implements WordRepoInterface
 	public function getByGroup(string $group, string $locale = null) : array
 	{
 		$result = [];
-
-		$str = new Str();
 
 		foreach ( scandir($this->path) as $loc ) {
 			if ('.' === $loc) continue;
@@ -63,7 +68,7 @@ class FileWordRepo implements WordRepoInterface
 
 			foreach ( $words as $key => $phrase ) {
 				$row = [
-					'key'    => $str->prepend($key, $group . '.'),
+					'key'    => $this->str->prepend($key, $group . '.'),
 					'locale' => $loc,
 					'group'  => $group,
 					'words'  => (array) $phrase,

@@ -4,10 +4,12 @@ namespace Gzhegow\Lang\Domain;
 
 use Gzhegow\Lang\Libs\Arr;
 use Gzhegow\Lang\Libs\Php;
+use Gzhegow\Lang\Libs\Str;
 use Gzhegow\Lang\Libs\Bcmath;
 use Gzhegow\Lang\Repo\WordRepoInterface;
 use Gzhegow\Lang\Repo\Memory\MemoryWordRepo;
 use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
+use Gzhegow\Lang\Exceptions\Error\LocaleNotFoundError;
 use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 
 /**
@@ -28,6 +30,10 @@ class Lang implements LangInterface
 	 * @var Bcmath
 	 */
 	protected $bcmath;
+	/**
+	 * @var Str
+	 */
+	protected $str;
 	/**
 	 * @var Php
 	 */
@@ -54,6 +60,10 @@ class Lang implements LangInterface
 	/**
 	 * @var string
 	 */
+	protected $localeDefault;
+	/**
+	 * @var string
+	 */
 	protected $localeSuffix;
 
 	/**
@@ -69,6 +79,7 @@ class Lang implements LangInterface
 	 * @param MemoryWordRepo    $memoryWordRepo
 	 *
 	 * @param Bcmath            $bcmath
+	 * @param Str               $str
 	 * @param Php               $php
 	 *
 	 * @param array             $locales
@@ -76,12 +87,15 @@ class Lang implements LangInterface
 	 * @param string|null       $localeNumeric
 	 * @param string|null       $localeFallback
 	 * @param string|null       $localeSuffix
+	 *
+	 * @throws LocaleNotFoundError
 	 */
 	public function __construct(
 		WordRepoInterface $wordRepo,
 		MemoryWordRepo $memoryWordRepo,
 
 		Bcmath $bcmath,
+		Str $str,
 		Php $php,
 
 		array $locales,
@@ -95,12 +109,14 @@ class Lang implements LangInterface
 		$this->memoryWordRepo = $memoryWordRepo;
 
 		$this->bcmath = $bcmath;
+		$this->str = $str;
 		$this->php = $php;
 
 		$this->locales = $locales;
 
 		$this->localeSuffix = $localeSuffix;
 
+		$this->setLocaleDefault($locale);
 		$this->setLocale($locale, $localeNumeric);
 
 		$this->localeFallback = $localeFallback ?? $this->locale;
@@ -122,6 +138,14 @@ class Lang implements LangInterface
 	public function getLoc() : string
 	{
 		return $this->locale;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocDefault() : string
+	{
+		return $this->localeDefault;
 	}
 
 	/**
@@ -154,6 +178,14 @@ class Lang implements LangInterface
 	/**
 	 * @return array
 	 */
+	public function getLocaleDefault() : array
+	{
+		return $this->getLocaleFor($this->localeDefault);
+	}
+
+	/**
+	 * @return array
+	 */
 	public function getLocaleFallback() : array
 	{
 		return $this->getLocaleFor($this->localeFallback);
@@ -168,6 +200,7 @@ class Lang implements LangInterface
 		return $this->localeNumeric;
 	}
 
+
 	/**
 	 * @return string
 	 */
@@ -180,9 +213,23 @@ class Lang implements LangInterface
 	/**
 	 * @param string      $locale
 	 * @param string|null $localeNumeric
+	 *
+	 * @throws LocaleNotFoundError
 	 */
 	public function setLocale(string $locale, string $localeNumeric = null) : void
 	{
+		if ('' === $locale) {
+			throw new InvalidArgumentException('Locale should be not empty');
+		}
+
+		if ('' === $localeNumeric) {
+			throw new InvalidArgumentException('LocaleNumeric should be not empty');
+		}
+
+		if (! isset($this->locales[ $locale ])) {
+			throw new LocaleNotFoundError('Locale not exists: ' . $locale, $this->locales);
+		}
+
 		$this->locale = $locale;
 		$this->localeNumeric = $localeNumeric ?? 'C';
 
@@ -193,6 +240,24 @@ class Lang implements LangInterface
 		setlocale(LC_MONETARY, $this->locales[ $this->locale ][ 'locale' ] . $this->localeSuffix);
 
 		setlocale(LC_NUMERIC, $this->localeNumeric ?? 'C');
+	}
+
+	/**
+	 * @param string $locale
+	 *
+	 * @throws LocaleNotFoundError
+	 */
+	public function setLocaleDefault(string $locale) : void
+	{
+		if ('' === $locale) {
+			throw new InvalidArgumentException('Locale should be not empty');
+		}
+
+		if (! isset($this->locales[ $locale ])) {
+			throw new LocaleNotFoundError('Locale not exists: ' . $locale, $this->locales);
+		}
+
+		$this->localeDefault = $locale;
 	}
 
 
@@ -336,9 +401,70 @@ class Lang implements LangInterface
 	/**
 	 * @return \Closure
 	 */
+	protected function getLocaleDefaultPlural() : \Closure
+	{
+		return $this->getLocalePluralFor($this->localeDefault);
+	}
+
+	/**
+	 * @return \Closure
+	 */
 	protected function getLocaleFallbackPlural() : \Closure
 	{
 		return $this->getLocalePluralFor($this->localeFallback);
+	}
+
+
+	/**
+	 * @param string|null $locale
+	 * @param string|null $url
+	 * @param array       $q
+	 * @param string|null $ref
+	 *
+	 * @return string
+	 */
+	public function localePath(string $locale = null, string $url = null, array $q = null, string $ref = null) : string
+	{
+		$locale = $locale ?? $this->locale;
+		$q = $q ?? [];
+
+		$info = parse_url($url)
+			+ [
+				'path'     => null,
+				'query'    => null,
+				'fragment' => null,
+			];
+
+		$ref = $ref ?? $info[ 'fragment' ];
+
+		parse_str($info[ 'query' ], $data);
+
+		$q += $data;
+
+		$localePath = '/'
+			. ltrim($info[ 'path' ], '/');
+
+		foreach ( array_keys($this->locales) as $loc ) {
+			if ($localePath === '/' . $loc) {
+				$localePath = '';
+				break;
+			}
+
+			if (null !== ( $result = $this->str->starts($localePath, '/' . $loc . '/') )) {
+				$localePath = '/' . $result;
+				break;
+			}
+		}
+
+		$localePath = ( $locale !== $this->localeDefault )
+			? '/' . $locale . $localePath
+			: $localePath;
+
+		$localePath = $localePath
+			. rtrim('?' . http_build_query($q), '?')
+			. rtrim('#' . $ref, '#');
+
+		return $localePath ?: '/';
 	}
 
 

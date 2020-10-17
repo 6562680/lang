@@ -4,6 +4,7 @@ namespace Gzhegow\Lang\Domain;
 
 
 use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
+use Gzhegow\Lang\Exceptions\Error\LocaleNotFoundError;
 
 /**
  * Class Lang
@@ -61,6 +62,13 @@ interface LangInterface
 	 * @param string|null $localeNumeric
 	 */
 	public function setLocale(string $locale, string $localeNumeric = null) : void;
+
+	/**
+	 * @param string $locale
+	 *
+	 * @throws LocaleNotFoundError
+	 */
+	public function setLocaleDefault(string $locale) : void;
 
 
 	/**
@@ -124,6 +132,17 @@ interface LangInterface
 	 * @return bool
 	 */
 	public function has(string $aword, string $locale, string $group = null, string &$word = null, string &$result = null) : bool;
+
+
+	/**
+	 * @param string|null $locale
+	 * @param string|null $url
+	 * @param array       $q
+	 * @param string|null $ref
+	 *
+	 * @return string
+	 */
+	public function localePath(string $locale = null, string $url = null, array $q = null, string $ref = null) : string;
 
 
 	/**
