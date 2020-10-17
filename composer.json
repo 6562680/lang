@@ -12,10 +12,6 @@
         {
             "type": "vcs",
             "url": "https://github.com/6562680/di"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/6562680/facader"
         }
     ],
     "minimum-stability": "dev",
@@ -23,6 +19,7 @@
     "require": {
         "php": "^7.3",
         
+        "ext-bcmath": "*",
         "ext-curl": "*",
         "ext-json": "*",
         
@@ -31,9 +28,7 @@
     "require-dev": {
         "phpunit/phpunit": "^8.0",
         
-        "symfony/var-dumper": "^4.0",
-        
-        "gzhegow/facader": "^1.0"
+        "symfony/var-dumper": "^4.0"
     },
     "autoload": {
         "psr-4": {

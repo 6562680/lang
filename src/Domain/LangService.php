@@ -2,12 +2,12 @@
 
 namespace Gzhegow\Lang\Domain;
 
-use Gzhegow\Lang\Exceptions\Error\WordNotFoundException;
+use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
 
 class LangService
 {
 	/**
-	 * @var Lang
+	 * @var LangInterface
 	 */
 	protected $lang;
 
@@ -15,21 +15,13 @@ class LangService
 	/**
 	 * Constructor
 	 *
-	 * @param Lang $lang
+	 * @param LangInterface $lang
 	 */
-	public function __construct(Lang $lang)
+	public function __construct(LangInterface $lang)
 	{
 		$this->lang = $lang;
 	}
 
-
-	/**
-	 * @return string
-	 */
-	public function getLocale() : string
-	{
-		return $this->lang->getLocale();
-	}
 
 	/**
 	 * @return string[]
@@ -38,6 +30,67 @@ class LangService
 	{
 		return $this->lang->getLocales();
 	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getLoc() : string
+	{
+		return $this->lang->getLoc();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocFallback() : string
+	{
+		return $this->lang->getLocFallback();
+	}
+
+
+	/**
+	 * @param string $locale
+	 *
+	 * @return array
+	 */
+	public function getLocaleFor(string $locale) : array
+	{
+		return $this->lang->getLocaleFor($locale);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getLocale() : array
+	{
+		return $this->lang->getLocale();
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getLocaleFallback() : array
+	{
+		return $this->lang->getLocaleFallback();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocaleNumeric() : string
+	{
+		return $this->lang->getLocaleNumeric();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocaleSuffix() : string
+	{
+		return $this->lang->getLocaleSuffix();
+	}
+
 
 	/**
 	 * @param string      $locale
@@ -48,59 +101,151 @@ class LangService
 		$this->lang->setLocale($locale, $localeNumeric);
 	}
 
+
 	/**
 	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return string
-	 * @throws WordNotFoundException
+	 * @throws WordNotFoundError
 	 */
-	public function get(string $aword, array $placeholders = [], string $group = null, string $locale = null) : string
+	public function get(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
 	{
-		return $this->lang->get($aword, $placeholders, $group, $locale);
+		return $this->lang->get($aword, $placeholders, $group, $locale, $word);
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrNull(string $word, array $placeholders = [], string $group = null, string $locale = null) : ?string
+	public function getOrNull(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
 	{
-		return $this->lang->getOrNull($word, $placeholders, $group, $locale);
+		return $this->lang->getOrNull($aword, $placeholders, $group, $locale, $word);
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrWord(string $word, array $placeholders = [], string $group = null, string $locale = null) : ?string
+	public function getOrWord(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
 	{
-		return $this->lang->getOrWord($word, $placeholders, $group, $locale);
+		return $this->lang->getOrWord($aword, $placeholders, $group, $locale, $word);
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $default
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrDefault(string $word, array $placeholders = [], string $default = null, string $group = null, string $locale = null) : ?string
+	public function getOrDefault(string $aword, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
 	{
-		return $this->lang->getOrDefault($word, $placeholders, $default, $group, $locale);
+		return $this->lang->getOrDefault($aword, $placeholders, $default, $group, $locale, $word);
 	}
+
+
+	/**
+	 * @param string      $aword
+	 * @param string      $locale
+	 * @param string|null $group
+	 * @param string|null $word
+	 * @param string      $result
+	 *
+	 * @return bool
+	 */
+	public function has(string $aword, string $locale, string $group = null, string &$word = null, string &$result = null) : bool
+	{
+		return $this->lang->has($aword, $locale, $group, $word, $result);
+	}
+
+
+	/**
+	 * @param string      $aword
+	 * @param string      $number
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return string
+	 * @throws WordNotFoundError
+	 */
+	public function choice(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
+	{
+		return $this->lang->choice($aword, $number, $placeholders, $group, $locale, $word);
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param string      $number
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function choiceOrNull(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		return $this->lang->choiceOrNull($aword, $number, $placeholders, $group, $locale, $word);
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param string      $number
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function choiceOrWord(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		return $this->lang->choiceOrWord($aword, $number, $placeholders, $group, $locale, $word);
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param string      $number
+	 * @param array       $placeholders
+	 * @param string|null $default
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function choiceOrDefault(string $aword, string $number, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		return $this->lang->choiceOrDefault($aword, $number, $placeholders, $group, $locale, $word);
+	}
+
 
 	/**
 	 * @param string $word
@@ -112,6 +257,7 @@ class LangService
 	{
 		return $this->lang->interpolate($word, $placeholders);
 	}
+
 
 	/**
 	 * @param array       $dct
@@ -139,6 +285,7 @@ class LangService
 		return $this->lang->translateMany($iterable, $placeholders, $group, $locale);
 	}
 
+
 	/**
 	 * @param array       $words
 	 * @param array       $placeholders
@@ -152,6 +299,7 @@ class LangService
 		return $this->lang->collect($words, $placeholders, $group, $locale);
 	}
 
+
 	/**
 	 * @param array $groups
 	 *
@@ -159,6 +307,6 @@ class LangService
 	 */
 	public function load(...$groups) : void
 	{
-		$this->lang->load($groups);
+		$this->lang->load(...$groups);
 	}
 }

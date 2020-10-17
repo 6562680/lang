@@ -4,20 +4,34 @@ namespace Gzhegow\Lang\Domain;
 
 use Gzhegow\Lang\Libs\Arr;
 use Gzhegow\Lang\Libs\Php;
-use Gzhegow\Lang\Repo\File\FileWordRepo;
+use Gzhegow\Lang\Libs\Bcmath;
+use Gzhegow\Lang\Repo\WordRepoInterface;
 use Gzhegow\Lang\Repo\Memory\MemoryWordRepo;
-use Gzhegow\Lang\Exceptions\Error\WordNotFoundException;
+use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
+use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 
 /**
  * Class Lang
  */
-class Lang
+class Lang implements LangInterface
 {
 	/**
-	 * @var array
+	 * @var WordRepoInterface
 	 */
-	protected $loadedGroups = [];
+	protected $wordRepo;
+	/**
+	 * @var MemoryWordRepo
+	 */
+	protected $memoryWordRepo;
 
+	/**
+	 * @var Bcmath
+	 */
+	protected $bcmath;
+	/**
+	 * @var Php
+	 */
+	protected $php;
 
 	/**
 	 * @var string[]
@@ -42,31 +56,34 @@ class Lang
 	 */
 	protected $localeSuffix;
 
-
 	/**
-	 * @var FileWordRepo
+	 * @var array
 	 */
-	protected $fileWordRepo;
-	/**
-	 * @var MemoryWordRepo
-	 */
-	protected $memoryWordRepo;
+	protected $loadedGroups = [];
 
 
 	/**
 	 * Constructor
 	 *
-	 * @param FileWordRepo   $fileWordRepo
-	 * @param MemoryWordRepo $memoryWordRepo
-	 * @param array          $locales
-	 * @param string         $locale
-	 * @param string|null    $localeFallback
-	 * @param string|null    $localeSuffix
-	 * @param string|null    $localeNumeric
+	 * @param WordRepoInterface $wordRepo
+	 * @param MemoryWordRepo    $memoryWordRepo
+	 *
+	 * @param Bcmath            $bcmath
+	 * @param Php               $php
+	 *
+	 * @param array             $locales
+	 * @param string            $locale
+	 * @param string|null       $localeNumeric
+	 * @param string|null       $localeFallback
+	 * @param string|null       $localeSuffix
 	 */
 	public function __construct(
-		FileWordRepo $fileWordRepo,
+		WordRepoInterface $wordRepo,
 		MemoryWordRepo $memoryWordRepo,
+
+		Bcmath $bcmath,
+		Php $php,
+
 		array $locales,
 		string $locale,
 		string $localeNumeric = null,
@@ -74,8 +91,11 @@ class Lang
 		string $localeSuffix = null
 	)
 	{
-		$this->fileWordRepo = $fileWordRepo;
+		$this->wordRepo = $wordRepo;
 		$this->memoryWordRepo = $memoryWordRepo;
+
+		$this->bcmath = $bcmath;
+		$this->php = $php;
 
 		$this->locales = $locales;
 
@@ -88,19 +108,72 @@ class Lang
 
 
 	/**
-	 * @return string
-	 */
-	public function getLocale() : string
-	{
-		return $this->locale;
-	}
-
-	/**
 	 * @return string[]
 	 */
 	public function getLocales() : array
 	{
 		return $this->locales;
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getLoc() : string
+	{
+		return $this->locale;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocFallback() : string
+	{
+		return $this->localeFallback;
+	}
+
+
+	/**
+	 * @param string $locale
+	 *
+	 * @return array
+	 */
+	public function getLocaleFor(string $locale) : array
+	{
+		return $this->locales[ $locale ];
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getLocale() : array
+	{
+		return $this->getLocaleFor($this->locale);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getLocaleFallback() : array
+	{
+		return $this->getLocaleFor($this->localeFallback);
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getLocaleNumeric() : string
+	{
+		return $this->localeNumeric;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getLocaleSuffix() : string
+	{
+		return $this->localeSuffix;
 	}
 
 
@@ -129,12 +202,102 @@ class Lang
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return string
-	 * @throws WordNotFoundException
+	 * @throws WordNotFoundError
 	 */
-	public function get(string $aword, array $placeholders = [], string $group = null, string $locale = null) : string
+	public function get(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
+	{
+		$locales = array_filter([
+			$locale,
+			$this->locale,
+			$this->localeFallback,
+		]);
+
+		$loc = null;
+		$plurals = null;
+		while ( ! $plurals && $locales ) {
+			if ($this->has($aword, $loc = array_shift($locales), $group, $word, $plurals)) {
+				break;
+			}
+		}
+
+		if (! $plurals) {
+			throw new WordNotFoundError('Word not found', func_get_args());
+		}
+
+		$result = $this->interpolate($plurals[ 0 ], $placeholders[ $aword ] ?? $placeholders);
+
+		return $result;
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function getOrNull(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		return $this->getOrDefault($aword, $placeholders, null, $group, $locale, $word);
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function getOrWord(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		return $this->getOrDefault($aword, $placeholders, $aword, $group, $locale, $word);
+	}
+
+	/**
+	 * @param string      $aword
+	 * @param array       $placeholders
+	 * @param string|null $default
+	 * @param string|null $group
+	 * @param string|null $locale
+	 *
+	 * @param string|null $word
+	 *
+	 * @return null|string
+	 */
+	public function getOrDefault(string $aword, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
+	{
+		try {
+			return $this->get($aword, $placeholders, $group, $locale, $word);
+		}
+		catch ( WordNotFoundError $e ) {
+			return $default;
+		}
+	}
+
+
+	/**
+	 * @param string      $aword
+	 * @param string      $locale
+	 * @param string|null $group
+	 * @param string|null $word
+	 * @param string      $result
+	 *
+	 * @return bool
+	 */
+	public function has(string $aword, string $locale, string $group = null, string &$word = null, string &$result = null) : bool
 	{
 		if ($aword[ 0 ] !== '@') {
+			$word = $aword;
+
 			return $aword;
 		}
 
@@ -142,83 +305,143 @@ class Lang
 
 		$word = mb_substr($aword, 1);
 
+		if (! $result = $this->memoryWordRepo->first($word, $group, $locale)) {
+			return false;
+		}
+
+		$result = $result->words;
+
+		return true;
+	}
+
+
+	/**
+	 * @param string $locale
+	 *
+	 * @return \Closure
+	 */
+	protected function getLocalePluralFor(string $locale) : \Closure
+	{
+		return $this->locales[ $locale ][ 'plural' ];
+	}
+
+	/**
+	 * @return \Closure
+	 */
+	protected function getLocalePlural() : \Closure
+	{
+		return $this->getLocalePluralFor($this->locale);
+	}
+
+	/**
+	 * @return \Closure
+	 */
+	protected function getLocaleFallbackPlural() : \Closure
+	{
+		return $this->getLocalePluralFor($this->localeFallback);
+	}
+
+
+	/**
+	 * @param string      $aword
+	 * @param string      $number
+	 * @param array       $placeholders
+	 * @param string|null $group
+	 * @param string|null $locale
+	 * @param string|null $word
+	 *
+	 * @return string
+	 * @throws WordNotFoundError
+	 */
+	public function choice(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
+	{
+		if (! ( 0
+			|| ( false !== filter_var($number, FILTER_VALIDATE_INT) )
+			|| ( false !== filter_var($number, FILTER_VALIDATE_FLOAT) )
+		)) {
+			throw new InvalidArgumentException('Number should be int or float');
+		}
+
+		$number = $this->bcmath->bcabs($number);
+
 		$locales = array_filter([
 			$locale,
 			$this->locale,
 			$this->localeFallback,
 		]);
 
-		$pluralKey = 0;
-
-		$result = null;
-		while ( ! $result && $locales ) {
-			$result = $this->memoryWordRepo->first($word, $group, array_shift($locales));
-
-			if ($result) {
-				$result = $result->words[ $pluralKey ];
+		$loc = null;
+		$plurals = null;
+		while ( ! $plurals && $locales ) {
+			if ($this->has($aword, $loc = array_shift($locales), $group, $word, $plurals)) {
 				break;
 			}
 		}
 
-		if (! $result) {
-			throw new WordNotFoundException('Word not found', func_get_args());
+		if (! $plurals) {
+			throw new WordNotFoundError('Word not found', func_get_args());
 		}
 
-		$result = $this->interpolate($result, $placeholders[ $aword ] ?? $placeholders);
+		$pluralKey = $this->getLocalePluralFor($loc)($number);
+
+		$result = $this->interpolate($plurals[ $pluralKey ] ?? $plurals[ 0 ], $placeholders[ $aword ] ?? $placeholders);
 
 		return $result;
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
+	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrNull(string $word, array $placeholders = [], string $group = null, string $locale = null) : ?string
+	public function choiceOrNull(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
 	{
-		return $this->getOrDefault($word, $placeholders, null, $group, $locale);
+		return $this->choiceOrDefault($aword, $number, $placeholders, null, $group, $locale, $word);
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
+	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrWord(string $word, array $placeholders = [], string $group = null, string $locale = null) : ?string
+	public function choiceOrWord(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
 	{
-		return $this->getOrDefault($word, $placeholders, $word, $group, $locale);
+		return $this->choiceOrDefault($aword, $number, $placeholders, $aword, $group, $locale, $word);
 	}
 
 	/**
-	 * @param string      $word
+	 * @param string      $aword
+	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $default
 	 * @param string|null $group
 	 * @param string|null $locale
 	 *
+	 * @param string|null $word
+	 *
 	 * @return null|string
 	 */
-	public function getOrDefault(string $word, array $placeholders = [], string $default = null, string $group = null, string $locale = null) : ?string
+	public function choiceOrDefault(string $aword, string $number, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
 	{
 		try {
-			return $this->get($word, $placeholders, $group, $locale);
+			return $this->choice($aword, $number, $placeholders, $group, $locale, $word);
 		}
-		catch ( WordNotFoundException $e ) {
+		catch ( WordNotFoundError $e ) {
 			return $default;
 		}
 	}
-
-
-	// public function choice(string $word, $number, array $placeholders = [], string $group = null, string $locale = null) : string
-	// {
-	// 	return $this->get($word, $locale);
-	// }
 
 
 	/**
@@ -269,10 +492,10 @@ class Lang
 
 		$arr = new Arr();
 
-		foreach ( $arr->walk($dct) as $fullpath => $value ) {
-			if (is_iterable($value)) continue;
+		foreach ( $arr->walk($dct) as $fullpath => $aword ) {
+			if (is_iterable($aword)) continue;
 
-			$result[ $arr->key($fullpath) ] = $this->getOrWord($value, $placeholders, $group, $locale);
+			$result[ $arr->key($fullpath) ] = $this->getOrWord($aword, $placeholders, $group, $locale);
 		}
 
 		return $result;
@@ -310,8 +533,10 @@ class Lang
 	{
 		$result = [];
 
-		foreach ( $words as $word ) {
-			$result[ mb_substr($word, 1) ] = $this->getOrWord($word, $placeholders, $group, $locale);
+		foreach ( $words as $aword ) {
+			$phrase = $this->getOrWord($aword, $placeholders, $group, $locale, $word);
+
+			$result[ $word ] = $phrase;
 		}
 
 		return $result;
@@ -348,7 +573,7 @@ class Lang
 			$this->loadedGroups[ $group ] = true;
 		}
 
-		$models = $this->fileWordRepo->getByGroups($groups);
+		$models = $this->wordRepo->getByGroups($groups);
 
 		$this->memoryWordRepo->saveMany($models);
 	}

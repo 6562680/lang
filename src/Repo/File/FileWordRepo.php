@@ -4,12 +4,13 @@ namespace Gzhegow\Lang\Repo\File;
 
 use Gzhegow\Lang\Libs\Str;
 use Gzhegow\Lang\Models\WordModel;
+use Gzhegow\Lang\Repo\WordRepoInterface;
 use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 
 /**
  * Class FileWordRepo
  */
-class FileWordRepo
+class FileWordRepo implements WordRepoInterface
 {
 	/**
 	 * @var string
@@ -60,12 +61,12 @@ class FileWordRepo
 
 			$words = require $this->path . '/' . $loc . '/' . sprintf('%s.php', $group);
 
-			foreach ( $words as $key => $string ) {
+			foreach ( $words as $key => $phrase ) {
 				$row = [
 					'key'    => $str->prepend($key, $group . '.'),
 					'locale' => $loc,
 					'group'  => $group,
-					'words'  => explode('|', $string),
+					'words'  => (array) $phrase,
 				];
 
 				$result[] = $this->mapToModel($row);
@@ -79,7 +80,7 @@ class FileWordRepo
 	 * @param array       $groups
 	 * @param string|null $locale
 	 *
-	 * @return array
+	 * @return WordModel[]
 	 */
 	public function getByGroups(array $groups, string $locale = null) : array
 	{

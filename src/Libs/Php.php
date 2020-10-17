@@ -28,4 +28,26 @@ class Php
 
 		return [ $kwargs, $args ];
 	}
+
+	/**
+	 * @param array $args
+	 *
+	 * @return mixed
+	 */
+	public function traceArgs(array $args)
+	{
+		array_walk_recursive($args, function (&$v) {
+			if (! is_scalar($v)) {
+				if (is_null($v)) {
+					$v = '{ NULL }';
+				} elseif (is_resource($v)) {
+					$v = '{ Resource #' . intval($v) . ' }';
+				} else {
+					$v = '{ #' . spl_object_id($v) . ' ' . get_class($v) . ' }';
+				}
+			}
+		});
+
+		return $args;
+	}
 }

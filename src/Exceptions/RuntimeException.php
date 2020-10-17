@@ -2,42 +2,101 @@
 
 namespace Gzhegow\Lang\Exceptions;
 
+use Throwable;
+use Gzhegow\Di\Di;
+use Gzhegow\Lang\Libs\Php;
+
 /**
- * Class RuntimeException
+ * Class LogicException
  */
 class RuntimeException extends \RuntimeException
 {
 	/**
+	 * @var string
+	 */
+	protected $msg;
+	/**
 	 * @var array
 	 */
-	protected $payload = [];
+	protected $err = [];
+	/**
+	 * @var mixed
+	 */
+	protected $payload;
 
 
 	/**
 	 * Constructor
 	 *
-	 * @param string          $message
-	 * @param array           $payload
-	 * @param \Throwable|null $previous
+	 * @param                $messages
+	 * @param                $payload
+	 * @param Throwable|null $previous
 	 */
-	public function __construct($message = "", $payload = [], \Throwable $previous = null)
+	public function __construct($messages, $payload = null, Throwable $previous = null)
 	{
-		$payload = (array) $payload;
+		$messages = (array) $messages;
 
-		array_walk_recursive($payload, function (&$v) {
-			if (! is_scalar($v)) {
-				if (is_null($v)) {
-					$v = '{ NULL }';
-				} elseif (is_resource($v)) {
-					$v = '{ Resource #' . intval($v) . ' }';
-				} else {
-					$v = '{ #' . spl_object_id($v) . ' ' . get_class($v) . ' }';
-				}
+		array_walk_recursive($messages, function ($message) {
+			if (! is_scalar($message)) {
+				throw new \InvalidArgumentException('Messages should be scalars', null, $this);
 			}
 		});
 
-		$message .= PHP_EOL . print_r($payload, 1);
+		$php = $this->getPhp();
 
-		parent::__construct($message, -1, $previous);
+		[ $errors, $messages ] = $php->kwargs($messages);
+
+		$this->err = $errors;
+		$this->msg = implode(PHP_EOL, $messages);
+		$this->payload = $payload;
+
+		$report[ 'msg' ] = $this->msg;
+		$report[ 'err' ] = $errors;
+		$report[ 'payload' ] = $payload;
+		$report[ 'trace' ] = array_map(function ($trace) use ($php) {
+			unset($trace[ 'type' ]);
+
+			$trace[ 'args' ] = $php->traceArgs($trace[ 'args' ]);
+
+			return $trace;
+		}, $this->getTrace());
+
+		$message = $this->msg . PHP_EOL . json_encode($report, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+		parent::__construct($message, $code = -1, $previous);
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getMsg() : string
+	{
+		return $this->msg;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getErr() : array
+	{
+		return $this->err;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getPayload()
+	{
+		return $this->payload;
+	}
+
+
+	/**
+	 * @return Php
+	 */
+	protected function getPhp() : Php
+	{
+		return Di::getInstance()->getOrFail(Php::class);
 	}
 }

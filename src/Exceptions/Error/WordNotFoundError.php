@@ -5,8 +5,8 @@ namespace Gzhegow\Lang\Exceptions\Error;
 use Gzhegow\Lang\Exceptions\Exception;
 
 /**
- * Class WordNotFoundException
+ * Class WordNotFoundError
  */
-class WordNotFoundException extends Exception
+class WordNotFoundError extends Exception
 {
 }

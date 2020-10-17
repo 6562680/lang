@@ -2,8 +2,11 @@
 
 namespace Gzhegow\Lang\Di;
 
+use Gzhegow\Lang\Libs\Php;
 use Gzhegow\Lang\Domain\Lang;
+use Gzhegow\Lang\Libs\Bcmath;
 use Gzhegow\Di\DeferableProvider;
+use Gzhegow\Lang\Domain\LangInterface;
 use Gzhegow\Lang\Repo\File\FileWordRepo;
 use Gzhegow\Lang\Repo\Memory\MemoryWordRepo;
 
@@ -17,12 +20,15 @@ class LangProvider extends DeferableProvider
 	 */
 	public function register() : void
 	{
-		$this->di->bindShared(Lang::class, function () {
+		$this->di->bindShared(LangInterface::class, function () {
 			$config = require __DIR__ . '/../../config/lang.php';
 
 			return new Lang(
 				new FileWordRepo(__DIR__ . '/../../storage/resources/lang'),
 				new MemoryWordRepo(),
+
+				new Bcmath(),
+				new Php(),
 
 				$config[ 'locales' ],
 				$config[ 'locale' ],

@@ -1,13 +1,5 @@
-<?php return [
-	'locale'          => 'ru',
-	'locale_numeric'  => 'C',
-	'locale_fallback' => 'en',
-
-	'locale_suffix' => '.UTF-8',
-
-	'locales' => array_map(function ($v) {
-		return array_combine([ 'locale', 'encoding', 'title', 'native' ], $v);
-	}, [
+<?php return ( function () {
+	$locales = [
 		// 'aa'      => [ 'aa_ER', 'Latn', 'Afar', 'Qafar' ],
 		// 'af'      => [ 'af_ZA', 'Latn', 'Afrikaans', 'Afrikaans' ],
 		// 'ak'      => [ 'ak_GH', 'Latn', 'Akan', 'Akan' ],
@@ -299,5 +291,68 @@
 		// 'wen'         => [ 'wen', 'Latn', 'Sorbian', 'Wendic' ],
 		// 'xog'         => [ 'xog', 'Latn', 'Soga', 'Olusoga' ],
 		// 'yav'         => [ 'yav', 'Latn', 'Yangben', 'Nuasue' ],
-	]),
-];
+	];
+
+	$pluralDefault = function (string $absN) {
+		$decimals = strlen(substr(strrchr($absN, '.'), 1));
+
+		return ( 0 !== bccomp($absN, 1, $decimals) || $decimals )
+			? 1
+			: 0;
+	};
+	$plurals = [
+		'_'  => $pluralDefault,
+		'ru' => function (string $absN) {
+			$decimals = strlen(substr(strrchr($absN, '.'), 1));
+
+			$n10 = bcmod($absN, 10, $decimals);
+			$n100 = bcmod($absN, 100, $decimals);
+
+			return null
+				// if *1 and not *11
+				?? ( ( 0 === bccomp($n10, 1, $decimals) // n10 = 1
+					&& 0 !== bccomp($n100, 11, $decimals) // n100 != 11
+				)
+					? 0
+					: null )
+
+				// if *2,*3,*4 and not between 10 and 20
+				?? ( $decimals || ( -1 !== bccomp($n10, 2, $decimals) // n10 >= 2
+					&& 1 !== bccomp($n10, 4, $decimals) // n10 <= 4
+					&& ( -1 === bccomp($n100, 10, $decimals) // n100 < 10
+						|| -1 !== bccomp($n100, 20, $decimals) // n100 >= 20
+					)
+				)
+					? 1
+					: null )
+
+				?? 2;
+		},
+	];
+
+	foreach ( $locales as $loc => $locale ) {
+		$locale = array_combine([
+			'locale',
+			'encoding',
+			'title',
+			'native',
+		], $locale);
+
+		$locale += [
+			'loc'    => $loc,
+			'plural' => $plurals[ $loc ] ?? $plurals[ '_' ],
+		];
+
+		$locales[ $loc ] = $locale;
+	}
+
+	return [
+		'locale'          => 'en',
+		'locale_numeric'  => 'C',
+		'locale_fallback' => 'en',
+
+		'locale_suffix' => '.UTF-8',
+
+		'locales' => $locales,
+	];
+} )();
