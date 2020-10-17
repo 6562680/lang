@@ -44,19 +44,13 @@ class LangProvider extends DeferableProvider
 	}
 
 	/**
-	 * @return void
-	 */
-	public function boot() : void
-	{
-	}
-
-	/**
 	 * @return array
 	 */
 	public function provides() : array
 	{
 		return [
 			Lang::class,
+			LangInterface::class,
 		];
 	}
 }
