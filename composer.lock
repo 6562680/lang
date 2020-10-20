@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "gzhegow/di",
-            "version": "1.2.16",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/6562680/di.git",
-                "reference": "976128ab3f95b117dfb881b79242bedb505dbb1d"
+                "reference": "1d36e669ee925a039e09e6bf8ab5f69ddacb7736"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/6562680/di/zipball/976128ab3f95b117dfb881b79242bedb505dbb1d",
-                "reference": "976128ab3f95b117dfb881b79242bedb505dbb1d",
+                "url": "https://api.github.com/repos/6562680/di/zipball/1d36e669ee925a039e09e6bf8ab5f69ddacb7736",
+                "reference": "1d36e669ee925a039e09e6bf8ab5f69ddacb7736",
                 "shasum": ""
             },
             "require": {
@@ -36,7 +36,6 @@
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Gzhegow\\Di\\": "src/gzhegow/Di",
                     "Tests\\": "tests/"
                 },
                 "files": [
@@ -52,10 +51,10 @@
             ],
             "description": "Dependency-Injection Container",
             "support": {
-                "source": "https://github.com/6562680/di/tree/1.2.16",
+                "source": "https://github.com/6562680/di/tree/1.3.1",
                 "issues": "https://github.com/6562680/di/issues"
             },
-            "time": "2020-10-15T13:45:04+00:00"
+            "time": "2020-10-20T08:58:18+00:00"
         },
         {
             "name": "psr/container",
