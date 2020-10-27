@@ -352,7 +352,5 @@
 
 		'locale_numeric' => 'C',
 		'locale_suffix'  => '.UTF-8',
-
-		'path' => __DIR__ . '/../storage/resources/lang',
 	];
 } )();

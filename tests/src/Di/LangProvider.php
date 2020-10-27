@@ -19,15 +19,13 @@ class LangProvider extends ExampleProvider
 	public function register() : void
 	{
 		$this->di->bind(WordRepoInterface::class, function () {
-			$config = require __DIR__ . '/../../config/lang.php';
-
 			return $this->di->create(PhpFileWordRepo::class, [
-				'$path' => $config[ 'path' ],
+				'$path' => $this->syncRealpath('resources'),
 			]);
 		});
 
 		$this->di->bindShared(LangInterface::class, function () {
-			$config = require __DIR__ . '/../../config/lang.php';
+			$config = require $this->syncRealpath('config');
 
 			return $this->di->create(Lang::class, [
 				'$languages' => $config[ 'languages' ],
@@ -39,5 +37,17 @@ class LangProvider extends ExampleProvider
 				'$localeSuffix'  => $config[ 'locale_suffix' ],
 			]);
 		});
+	}
+
+
+	/**
+	 * @return array
+	 */
+	protected function sync() : array
+	{
+		return [
+			'config'    => __DIR__ . '/../../config/lang.php',
+			'resources' => __DIR__ . '/../../storage/resources/lang',
+		];
 	}
 }

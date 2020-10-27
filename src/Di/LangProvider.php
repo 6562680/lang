@@ -19,15 +19,13 @@ class LangProvider extends DeferableProvider
 	public function register() : void
 	{
 		$this->di->bind(WordRepoInterface::class, function () {
-			$config = require __DIR__ . '/../../config/lang.php';
-
 			return $this->di->create(PhpFileWordRepo::class, [
-				'$path' => $config[ 'path' ],
+				'$path' => $this->defineRealpath('resources'),
 			]);
 		});
 
 		$this->di->bindShared(LangInterface::class, function () {
-			$config = require __DIR__ . '/../../config/lang.php';
+			$config = require $this->defineRealpath('config');
 
 			return $this->di->create(Lang::class, [
 				'$languages' => $config[ 'languages' ],
@@ -49,6 +47,18 @@ class LangProvider extends DeferableProvider
 		return [
 			Lang::class,
 			LangInterface::class,
+		];
+	}
+
+
+	/**
+	 * @return array
+	 */
+	protected function define() : array
+	{
+		return [
+			'config'    => __DIR__ . '/../../config/lang.php',
+			'resources' => __DIR__ . '/../../storage/resources/lang',
 		];
 	}
 }
