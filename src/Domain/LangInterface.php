@@ -12,13 +12,6 @@ use Gzhegow\Lang\Exceptions\Logic\Error\LanguageNotFoundError;
 interface LangInterface
 {
 	/**
-	 * @param array $groups
-	 *
-	 * @return Lang
-	 */
-	public function load(...$groups);
-
-	/**
 	 * @return string[]
 	 */
 	public function getLanguages() : array;
@@ -144,6 +137,13 @@ interface LangInterface
 	 * @return bool
 	 */
 	public function has(string $aword, string $lang, string $group = null, string &$word = null, string &$result = null) : bool;
+
+	/**
+	 * @param array $groups
+	 *
+	 * @return Lang
+	 */
+	public function load(...$groups);
 
 	/**
 	 * @param string|null $lang
