@@ -2,15 +2,16 @@
 
 namespace Gzhegow\Lang\Domain;
 
-use Gzhegow\Lang\Libs\Arr;
-use Gzhegow\Lang\Libs\Php;
-use Gzhegow\Lang\Libs\Str;
-use Gzhegow\Lang\Libs\Bcmath;
+use Gzhegow\Support\Arr;
+use Gzhegow\Support\Php;
+use Gzhegow\Support\Str;
+use Gzhegow\Support\Type;
+use Gzhegow\Support\Bcmath;
 use Gzhegow\Lang\Repo\WordRepoInterface;
 use Gzhegow\Lang\Repo\Memory\MemoryWordRepo;
 use Gzhegow\Lang\Exceptions\Error\WordNotFoundError;
-use Gzhegow\Lang\Exceptions\Error\LocaleNotFoundError;
 use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
+use Gzhegow\Lang\Exceptions\Logic\Error\LanguageNotFoundError;
 
 /**
  * Class Lang
@@ -18,14 +19,9 @@ use Gzhegow\Lang\Exceptions\Logic\InvalidArgumentException;
 class Lang implements LangInterface
 {
 	/**
-	 * @var WordRepoInterface
+	 * @var Arr
 	 */
-	protected $wordRepo;
-	/**
-	 * @var MemoryWordRepo
-	 */
-	protected $memoryWordRepo;
-
+	protected $arr;
 	/**
 	 * @var Bcmath
 	 */
@@ -38,29 +34,39 @@ class Lang implements LangInterface
 	 * @var Php
 	 */
 	protected $php;
+	/**
+	 * @var Type
+	 */
+	protected $type;
+
+	/**
+	 * @var WordRepoInterface
+	 */
+	protected $wordRepo;
+	/**
+	 * @var MemoryWordRepo
+	 */
+	protected $memoryWordRepo;
 
 	/**
 	 * @var string[]
 	 */
-	protected $locales = [];
+	protected $languages = [];
 
 	/**
 	 * @var string
 	 */
-	protected $locale;
+	protected $lang;
 	/**
 	 * @var string
 	 */
-	protected $localeFallback;
+	protected $langDefault;
+
 	/**
 	 * @var string
 	 */
 	protected $localeNumeric;
 
-	/**
-	 * @var string
-	 */
-	protected $localeDefault;
 	/**
 	 * @var string
 	 */
@@ -75,189 +81,227 @@ class Lang implements LangInterface
 	/**
 	 * Constructor
 	 *
-	 * @param WordRepoInterface $wordRepo
-	 * @param MemoryWordRepo    $memoryWordRepo
-	 *
+	 * @param Arr               $arr
 	 * @param Bcmath            $bcmath
 	 * @param Str               $str
 	 * @param Php               $php
+	 * @param Type              $type
 	 *
-	 * @param array             $locales
-	 * @param string            $locale
+	 * @param WordRepoInterface $wordRepo
+	 * @param MemoryWordRepo    $memoryWordRepo
+	 *
+	 * @param array             $languages
+	 *
+	 * @param string            $lang
+	 * @param string|null       $langDefault
+	 *
 	 * @param string|null       $localeNumeric
-	 * @param string|null       $localeFallback
 	 * @param string|null       $localeSuffix
 	 *
-	 * @throws LocaleNotFoundError
+	 * @throws LanguageNotFoundError
 	 */
 	public function __construct(
-		WordRepoInterface $wordRepo,
-		MemoryWordRepo $memoryWordRepo,
-
+		Arr $arr,
 		Bcmath $bcmath,
 		Str $str,
 		Php $php,
+		Type $type,
 
-		array $locales,
-		string $locale,
+		WordRepoInterface $wordRepo,
+		MemoryWordRepo $memoryWordRepo,
+
+		array $languages,
+
+		string $lang,
+		string $langDefault = null,
+
 		string $localeNumeric = null,
-		string $localeFallback = null,
 		string $localeSuffix = null
 	)
 	{
-		$this->wordRepo = $wordRepo;
-		$this->memoryWordRepo = $memoryWordRepo;
-
+		$this->arr = $arr;
 		$this->bcmath = $bcmath;
 		$this->str = $str;
 		$this->php = $php;
+		$this->type = $type;
 
-		$this->locales = $locales;
+		$this->wordRepo = $wordRepo;
+		$this->memoryWordRepo = $memoryWordRepo;
+
+		$this->languages = $languages;
 
 		$this->localeSuffix = $localeSuffix;
 
-		$this->setLocaleDefault($locale);
-		$this->setLocale($locale, $localeNumeric);
+		$this->setLangDefault($langDefault ?? $lang);
+		$this->setLang($lang, $localeNumeric);
+	}
 
-		$this->localeFallback = $localeFallback ?? $this->locale;
+
+	/**
+	 * @param array $groups
+	 *
+	 * @return Lang
+	 */
+	public function load(...$groups)
+	{
+		array_walk_recursive($groups, function (string $group) {
+			if (isset($this->loadedGroups[ $group ])) {
+				return;
+			}
+
+			$this->loadedGroups[ $group ] = false;
+		});
+
+		return $this;
 	}
 
 
 	/**
 	 * @return string[]
 	 */
-	public function getLocales() : array
+	public function getLanguages() : array
 	{
-		return $this->locales;
+		return $this->languages;
 	}
 
 
 	/**
 	 * @return string
 	 */
-	public function getLoc() : string
+	public function getLang() : string
 	{
-		return $this->locale;
+		return $this->lang;
 	}
 
 	/**
 	 * @return string
 	 */
-	public function getLocDefault() : string
+	public function getLangDefault() : string
 	{
-		return $this->localeDefault;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getLocFallback() : string
-	{
-		return $this->localeFallback;
+		return $this->langDefault;
 	}
 
 
 	/**
-	 * @param string $locale
+	 * @param string $lang
 	 *
 	 * @return array
 	 */
-	public function getLocaleFor(string $locale) : array
+	public function getLanguageFor(string $lang) : array
 	{
-		return $this->locales[ $locale ];
+		return $this->languages[ $lang ];
 	}
 
 	/**
 	 * @return array
 	 */
-	public function getLocale() : array
+	public function getLanguage() : array
 	{
-		return $this->getLocaleFor($this->locale);
+		return $this->getLanguageFor($this->lang);
 	}
 
 	/**
 	 * @return array
 	 */
-	public function getLocaleDefault() : array
+	public function getLanguageDefault() : array
 	{
-		return $this->getLocaleFor($this->localeDefault);
+		return $this->getLanguageFor($this->langDefault);
 	}
+
 
 	/**
-	 * @return array
+	 * @param string $lang
+	 *
+	 * @return string
 	 */
-	public function getLocaleFallback() : array
+	public function getLocaleFor(string $lang) : string
 	{
-		return $this->getLocaleFor($this->localeFallback);
+		return $this->languages[ $lang ][ 'locale' ];
 	}
-
 
 	/**
 	 * @return string
 	 */
-	public function getLocaleNumeric() : string
+	public function getLocale() : string
 	{
-		return $this->localeNumeric;
+		return $this->getLocaleFor($this->lang);
 	}
-
 
 	/**
 	 * @return string
 	 */
-	public function getLocaleSuffix() : string
+	public function getLocaleDefault() : string
 	{
-		return $this->localeSuffix;
+		return $this->getLocaleFor($this->langDefault);
 	}
 
 
 	/**
-	 * @param string      $locale
+	 * @param string $lang
+	 *
+	 * @return \Closure
+	 */
+	protected function getLanguagePluralFor(string $lang) : \Closure
+	{
+		return $this->languages[ $lang ][ 'plural' ];
+	}
+
+
+	/**
+	 * @param string      $lang
 	 * @param string|null $localeNumeric
 	 *
-	 * @throws LocaleNotFoundError
+	 * @return Lang
+	 * @throws LanguageNotFoundError
 	 */
-	public function setLocale(string $locale, string $localeNumeric = null) : void
+	public function setLang(string $lang, string $localeNumeric = null)
 	{
-		if ('' === $locale) {
-			throw new InvalidArgumentException('Locale should be not empty');
+		if ('' === $lang) {
+			throw new InvalidArgumentException('Lang should be not empty');
 		}
 
 		if ('' === $localeNumeric) {
 			throw new InvalidArgumentException('LocaleNumeric should be not empty');
 		}
 
-		if (! isset($this->locales[ $locale ])) {
-			throw new LocaleNotFoundError('Locale not exists: ' . $locale, $this->locales);
+		if (! isset($this->languages[ $lang ])) {
+			throw new LanguageNotFoundError('Language not exists: ' . $lang, $this->languages);
 		}
 
-		$this->locale = $locale;
+		$this->lang = $lang;
+
 		$this->localeNumeric = $localeNumeric ?? 'C';
 
-		setlocale(LC_COLLATE, $this->locales[ $this->locale ][ 'locale' ] . $this->localeSuffix);
-		setlocale(LC_CTYPE, $this->locales[ $this->locale ][ 'locale' ] . $this->localeSuffix);
+		setlocale(LC_COLLATE, $this->languages[ $this->lang ][ 'locale' ] . $this->localeSuffix);
+		setlocale(LC_CTYPE, $this->languages[ $this->lang ][ 'locale' ] . $this->localeSuffix);
 
-		setlocale(LC_TIME, $this->locales[ $this->locale ][ 'locale' ] . $this->localeSuffix);
-		setlocale(LC_MONETARY, $this->locales[ $this->locale ][ 'locale' ] . $this->localeSuffix);
+		setlocale(LC_TIME, $this->languages[ $this->lang ][ 'locale' ] . $this->localeSuffix);
+		setlocale(LC_MONETARY, $this->languages[ $this->lang ][ 'locale' ] . $this->localeSuffix);
 
 		setlocale(LC_NUMERIC, $this->localeNumeric ?? 'C');
+
+		return $this;
 	}
 
 	/**
-	 * @param string $locale
+	 * @param string $lang
 	 *
-	 * @throws LocaleNotFoundError
+	 * @return Lang
+	 * @throws LanguageNotFoundError
 	 */
-	public function setLocaleDefault(string $locale) : void
+	public function setLangDefault(string $lang)
 	{
-		if ('' === $locale) {
-			throw new InvalidArgumentException('Locale should be not empty');
+		if ('' === $lang) {
+			throw new InvalidArgumentException('Lang should be not empty');
 		}
 
-		if (! isset($this->locales[ $locale ])) {
-			throw new LocaleNotFoundError('Locale not exists: ' . $locale, $this->locales);
+		if (! isset($this->languages[ $lang ])) {
+			throw new LanguageNotFoundError('Language not exists: ' . $lang, $this->languages);
 		}
 
-		$this->localeDefault = $locale;
+		$this->langDefault = $lang;
+
+		return $this;
 	}
 
 
@@ -265,31 +309,31 @@ class Lang implements LangInterface
 	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return string
-	 * @throws WordNotFoundError
+	 * @throws \Gzhegow\Lang\Exceptions\Error\WordNotFoundError
 	 */
-	public function get(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
+	public function get(string $aword, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : string
 	{
-		$locales = array_filter([
-			$locale,
-			$this->locale,
-			$this->localeFallback,
+		$langs = array_filter([
+			$lang,
+			$this->lang,
+			$this->langDefault,
 		]);
 
-		$loc = null;
+		$langCurrent = null;
 		$plurals = null;
-		while ( ! $plurals && $locales ) {
-			if ($this->has($aword, $loc = array_shift($locales), $group, $word, $plurals)) {
+		while ( ! $plurals && $langs ) {
+			if ($this->has($aword, $langCurrent = array_shift($langs), $group, $word, $plurals)) {
 				break;
 			}
 		}
 
 		if (! $plurals) {
-			throw new WordNotFoundError('Word not found', func_get_args());
+			throw new WordNotFoundError('Word not found: ' . $aword, func_get_args());
 		}
 
 		$result = $this->interpolate($plurals[ 0 ], $placeholders[ $aword ] ?? $placeholders);
@@ -301,30 +345,30 @@ class Lang implements LangInterface
 	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function getOrNull(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	public function getOrNull(string $aword, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : ?string
 	{
-		return $this->getOrDefault($aword, $placeholders, null, $group, $locale, $word);
+		return $this->getOrDefault($aword, $placeholders, null, $group, $lang, $word);
 	}
 
 	/**
 	 * @param string      $aword
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function getOrWord(string $aword, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	public function getOrWord(string $aword, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : ?string
 	{
-		return $this->getOrDefault($aword, $placeholders, $aword, $group, $locale, $word);
+		return $this->getOrDefault($aword, $placeholders, $aword, $group, $lang, $word);
 	}
 
 	/**
@@ -332,16 +376,16 @@ class Lang implements LangInterface
 	 * @param array       $placeholders
 	 * @param string|null $default
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function getOrDefault(string $aword, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
+	public function getOrDefault(string $aword, array $placeholders = [], string $default = null, string $group = null, string $lang = null, string &$word = null) : ?string
 	{
 		try {
-			return $this->get($aword, $placeholders, $group, $locale, $word);
+			return $this->get($aword, $placeholders, $group, $lang, $word);
 		}
 		catch ( WordNotFoundError $e ) {
 			return $default;
@@ -351,14 +395,14 @@ class Lang implements LangInterface
 
 	/**
 	 * @param string      $aword
-	 * @param string      $locale
+	 * @param string      $lang
 	 * @param string|null $group
 	 * @param string|null $word
 	 * @param string      $result
 	 *
 	 * @return bool
 	 */
-	public function has(string $aword, string $locale, string $group = null, string &$word = null, string &$result = null) : bool
+	public function has(string $aword, string $lang, string $group = null, string &$word = null, string &$result = null) : bool
 	{
 		if ($aword[ 0 ] !== '@') {
 			$word = $aword;
@@ -370,62 +414,27 @@ class Lang implements LangInterface
 
 		$word = mb_substr($aword, 1);
 
-		if (! $result = $this->memoryWordRepo->first($word, $group, $locale)) {
+		if (! $result = $this->memoryWordRepo->first($word, $group, $lang)) {
 			return false;
 		}
 
-		$result = $result->words;
+		$result = $result->plurals;
 
 		return true;
 	}
 
 
 	/**
-	 * @param string $locale
-	 *
-	 * @return \Closure
-	 */
-	protected function getLocalePluralFor(string $locale) : \Closure
-	{
-		return $this->locales[ $locale ][ 'plural' ];
-	}
-
-	/**
-	 * @return \Closure
-	 */
-	protected function getLocalePlural() : \Closure
-	{
-		return $this->getLocalePluralFor($this->locale);
-	}
-
-	/**
-	 * @return \Closure
-	 */
-	protected function getLocaleDefaultPlural() : \Closure
-	{
-		return $this->getLocalePluralFor($this->localeDefault);
-	}
-
-	/**
-	 * @return \Closure
-	 */
-	protected function getLocaleFallbackPlural() : \Closure
-	{
-		return $this->getLocalePluralFor($this->localeFallback);
-	}
-
-
-	/**
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 * @param string|null $url
 	 * @param array       $q
 	 * @param string|null $ref
 	 *
 	 * @return string
 	 */
-	public function localePath(string $locale = null, string $url = null, array $q = null, string $ref = null) : string
+	public function languagePath(string $lang = null, string $url = null, array $q = null, string $ref = null) : string
 	{
-		$locale = $locale ?? $this->locale;
+		$lang = $lang ?? $this->lang;
 		$q = $q ?? [];
 
 		$info = parse_url($url)
@@ -441,30 +450,31 @@ class Lang implements LangInterface
 
 		$q += $data;
 
-		$localePath = '/'
+		$langPath = '/'
 			. ltrim($info[ 'path' ], '/');
 
-		foreach ( array_keys($this->locales) as $loc ) {
-			if ($localePath === '/' . $loc) {
-				$localePath = '';
+		foreach ( array_keys($this->languages) as $loc ) {
+			if ($langPath === '/' . $loc) {
+				$langPath = '';
 				break;
 			}
 
-			if (null !== ( $result = $this->str->starts($localePath, '/' . $loc . '/') )) {
-				$localePath = '/' . $result;
+			if (null !== ( $result = $this->str->starts($langPath, '/' . $loc . '/') )) {
+				$langPath = '/' . $result;
 				break;
 			}
 		}
 
-		$localePath = ( $locale !== $this->localeDefault )
-			? '/' . $locale . $localePath
-			: $localePath;
+		$langPath = ( $lang !== $this->langDefault )
+			? '/' . $lang . $langPath
+			: $langPath;
 
-		$localePath = $localePath
+		$langPath = $langPath
 			. rtrim('?' . http_build_query($q), '?')
 			. rtrim('#' . $ref, '#');
 
-		return $localePath ?: '/';
+		return $langPath
+			?: '/';
 	}
 
 
@@ -473,42 +483,42 @@ class Lang implements LangInterface
 	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 * @param string|null $word
 	 *
 	 * @return string
 	 * @throws WordNotFoundError
 	 */
-	public function choice(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : string
+	public function choice(string $aword, string $number, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : string
 	{
 		if (! ( 0
 			|| ( false !== filter_var($number, FILTER_VALIDATE_INT) )
 			|| ( false !== filter_var($number, FILTER_VALIDATE_FLOAT) )
 		)) {
-			throw new InvalidArgumentException('Number should be int or float');
+			throw new InvalidArgumentException('Number should be int or float', func_get_args());
 		}
 
 		$number = $this->bcmath->bcabs($number);
 
-		$locales = array_filter([
-			$locale,
-			$this->locale,
-			$this->localeFallback,
+		$langs = array_filter([
+			$lang,
+			$this->lang,
+			$this->langDefault,
 		]);
 
 		$loc = null;
 		$plurals = null;
-		while ( ! $plurals && $locales ) {
-			if ($this->has($aword, $loc = array_shift($locales), $group, $word, $plurals)) {
+		while ( ! $plurals && $langs ) {
+			if ($this->has($aword, $loc = array_shift($langs), $group, $word, $plurals)) {
 				break;
 			}
 		}
 
 		if (! $plurals) {
-			throw new WordNotFoundError('Word not found', func_get_args());
+			throw new WordNotFoundError('Word not found: ' . $aword, func_get_args());
 		}
 
-		$pluralKey = $this->getLocalePluralFor($loc)($number);
+		$pluralKey = $this->getLanguagePluralFor($loc)($number);
 
 		$result = $this->interpolate($plurals[ $pluralKey ] ?? $plurals[ 0 ], $placeholders[ $aword ] ?? $placeholders);
 
@@ -520,15 +530,15 @@ class Lang implements LangInterface
 	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function choiceOrNull(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	public function choiceOrNull(string $aword, string $number, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : ?string
 	{
-		return $this->choiceOrDefault($aword, $number, $placeholders, null, $group, $locale, $word);
+		return $this->choiceOrDefault($aword, $number, $placeholders, null, $group, $lang, $word);
 	}
 
 	/**
@@ -536,15 +546,15 @@ class Lang implements LangInterface
 	 * @param string      $number
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function choiceOrWord(string $aword, string $number, array $placeholders = [], string $group = null, string $locale = null, string &$word = null) : ?string
+	public function choiceOrWord(string $aword, string $number, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : ?string
 	{
-		return $this->choiceOrDefault($aword, $number, $placeholders, $aword, $group, $locale, $word);
+		return $this->choiceOrDefault($aword, $number, $placeholders, $aword, $group, $lang, $word);
 	}
 
 	/**
@@ -553,16 +563,16 @@ class Lang implements LangInterface
 	 * @param array       $placeholders
 	 * @param string|null $default
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @param string|null $word
 	 *
 	 * @return null|string
 	 */
-	public function choiceOrDefault(string $aword, string $number, array $placeholders = [], string $default = null, string $group = null, string $locale = null, string &$word = null) : ?string
+	public function choiceOrDefault(string $aword, string $number, array $placeholders = [], string $default = null, string $group = null, string $lang = null, string &$word = null) : ?string
 	{
 		try {
-			return $this->choice($aword, $number, $placeholders, $group, $locale, $word);
+			return $this->choice($aword, $number, $placeholders, $group, $lang, $word);
 		}
 		catch ( WordNotFoundError $e ) {
 			return $default;
@@ -608,20 +618,18 @@ class Lang implements LangInterface
 	 * @param array       $dct
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string      $locale
+	 * @param string      $lang
 	 *
 	 * @return array
 	 */
-	public function translate(array $dct, array $placeholders = [], string $group = null, string $locale = null) : array
+	public function translate(array $dct, array $placeholders = [], string $group = null, string $lang = null) : array
 	{
 		$result = [];
 
-		$arr = new Arr();
-
-		foreach ( $arr->walk($dct) as $fullpath => $aword ) {
+		foreach ( $this->arr->walk($dct) as $fullpath => $aword ) {
 			if (is_iterable($aword)) continue;
 
-			$result[ $arr->key($fullpath) ] = $this->getOrWord($aword, $placeholders, $group, $locale);
+			$result[ $this->arr->key($fullpath) ] = $this->getOrWord($aword, $placeholders, $group, $lang);
 		}
 
 		return $result;
@@ -631,16 +639,16 @@ class Lang implements LangInterface
 	 * @param iterable    $iterable
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string      $locale
+	 * @param string      $lang
 	 *
 	 * @return array
 	 */
-	public function translateMany(iterable $iterable, array $placeholders = [], string $group = null, string $locale = null) : array
+	public function translateMany(iterable $iterable, array $placeholders = [], string $group = null, string $lang = null) : array
 	{
 		$result = [];
 
 		foreach ( $iterable as $key => $array ) {
-			$result[ $key ] = $this->translate($array, $placeholders, $group, $locale);
+			$result[ $key ] = $this->translate($array, $placeholders, $group, $lang);
 		}
 
 		return $result;
@@ -651,16 +659,16 @@ class Lang implements LangInterface
 	 * @param array       $words
 	 * @param array       $placeholders
 	 * @param string|null $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @return array
 	 */
-	public function collect(array $words, array $placeholders = [], string $group = null, string $locale = null) : array
+	public function collect(array $words, array $placeholders = [], string $group = null, string $lang = null) : array
 	{
 		$result = [];
 
 		foreach ( $words as $aword ) {
-			$phrase = $this->getOrWord($aword, $placeholders, $group, $locale, $word);
+			$phrase = $this->getOrWord($aword, $placeholders, $group, $lang, $word);
 
 			$result[ $word ] = $phrase;
 		}
@@ -670,26 +678,9 @@ class Lang implements LangInterface
 
 
 	/**
-	 * @param array $groups
-	 *
-	 * @return void
+	 * @return Lang
 	 */
-	public function load(...$groups) : void
-	{
-		array_walk_recursive($groups, function (string $group) {
-			if (isset($this->loadedGroups[ $group ])) {
-				return;
-			}
-
-			$this->loadedGroups[ $group ] = false;
-		});
-	}
-
-
-	/**
-	 * @return void
-	 */
-	protected function syncWords() : void
+	protected function syncWords()
 	{
 		$groups = [];
 		foreach ( $this->loadedGroups as $group => $bool ) {
@@ -702,5 +693,7 @@ class Lang implements LangInterface
 		$models = $this->wordRepo->getByGroups($groups);
 
 		$this->memoryWordRepo->saveMany($models);
+
+		return $this;
 	}
 }

@@ -10,7 +10,7 @@ class WordModel extends AbstractModel
 	/**
 	 * @var string
 	 */
-	public $locale;
+	public $lang;
 	/**
 	 * @var string
 	 */
@@ -19,9 +19,8 @@ class WordModel extends AbstractModel
 	 * @var string
 	 */
 	public $key;
-
 	/**
 	 * @var string[]
 	 */
-	public $words = [];
+	public $plurals = [];
 }

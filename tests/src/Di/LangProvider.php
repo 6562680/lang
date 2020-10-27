@@ -1,17 +1,17 @@
 <?php
 
-namespace Gzhegow\Lang\Di;
+namespace Gzhegow\Lang\Tests\Di;
 
 use Gzhegow\Lang\Domain\Lang;
-use Gzhegow\Di\DeferableProvider;
 use Gzhegow\Lang\Domain\LangInterface;
 use Gzhegow\Lang\Repo\WordRepoInterface;
 use Gzhegow\Lang\Repo\File\PhpFileWordRepo;
+use Gzhegow\Lang\Di\LangProvider as ExampleProvider;
 
 /**
  * Class LangProvider
  */
-class LangProvider extends DeferableProvider
+class LangProvider extends ExampleProvider
 {
 	/**
 	 * @return void
@@ -39,16 +39,5 @@ class LangProvider extends DeferableProvider
 				'$localeSuffix'  => $config[ 'locale_suffix' ],
 			]);
 		});
-	}
-
-	/**
-	 * @return array
-	 */
-	public function provides() : array
-	{
-		return [
-			Lang::class,
-			LangInterface::class,
-		];
 	}
 }

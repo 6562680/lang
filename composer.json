@@ -1,6 +1,6 @@
 {
     "name": "gzhegow/lang",
-    "description": "Multi-language module",
+    "description": "Lang Module",
     "type": "library",
     "authors": [
         {
@@ -9,6 +9,10 @@
         }
     ],
     "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/6562680/support"
+        },
         {
             "type": "vcs",
             "url": "https://github.com/6562680/di"
@@ -23,10 +27,11 @@
         "ext-curl": "*",
         "ext-json": "*",
         
+        "gzhegow/support": "^1.0",
         "gzhegow/di": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.0",
+        "phpunit/phpunit": "^9.0",
         
         "symfony/var-dumper": "^4.0"
     },
@@ -37,7 +42,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Gzhegow\\Lang\\Tests\\": "tests/"
+            "Gzhegow\\Lang\\Tests\\": "tests/src"
         }
     }
 }

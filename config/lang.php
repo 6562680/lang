@@ -1,5 +1,8 @@
 <?php return ( function () {
-	$locales = [
+	$languages = [
+		'en' => [ 'en_GB', 'Latn', 'English', 'English' ],
+		'ru' => [ 'ru_RU', 'Cyrl', 'Russian', 'Русский' ],
+
 		// 'aa'      => [ 'aa_ER', 'Latn', 'Afar', 'Qafar' ],
 		// 'af'      => [ 'af_ZA', 'Latn', 'Afrikaans', 'Afrikaans' ],
 		// 'ak'      => [ 'ak_GH', 'Latn', 'Akan', 'Akan' ],
@@ -34,7 +37,7 @@
 		// 'en-AU'   => [ 'en_AU', 'Latn', 'Australian English', 'Australian English' ],
 		// 'en-CA'   => [ 'en_CA', 'Latn', 'Canadian English', 'Canadian English' ],
 		// 'en-GB'   => [ 'en_GB', 'Latn', 'British English', 'British English' ],
-		'en' => [ 'en_GB', 'Latn', 'English', 'English' ],
+		// 'en' => [ 'en_GB', 'Latn', 'English', 'English' ],
 		// 'en-US'   => [ 'en_US', 'Latn', 'U.S. English', 'U.S. English' ],
 		// 'es'      => [ 'es_ES', 'Latn', 'Spanish', 'Español' ],
 		// 'et'      => [ 'et_EE', 'Latn', 'Estonian', 'Eesti' ],
@@ -118,7 +121,7 @@
 		// 'pt-BR'   => [ 'pt_BR', 'Latn', 'Brazilian Portuguese', 'Português do Brasil' ],
 		// 'pt'      => [ 'pt_PT', 'Latn', 'Portuguese', 'Português' ],
 		// 'ro'      => [ 'ro_RO', 'Latn', 'Romanian', 'Română' ],
-		'ru' => [ 'ru_RU', 'Cyrl', 'Russian', 'Русский' ],
+		// 'ru' => [ 'ru_RU', 'Cyrl', 'Russian', 'Русский' ],
 		// 'rw'      => [ 'rw_RW', 'Latn', 'Kinyarwanda', 'Kinyarwanda' ],
 		// 'sa'      => [ 'sa_IN', 'Deva', 'Sanskrit', 'संस्कृतम्' ],
 		// 'sc'      => [ 'sc_IT', 'Latn', 'Sardinian', 'Sardu' ],
@@ -330,29 +333,26 @@
 		},
 	];
 
-	foreach ( $locales as $loc => $locale ) {
-		$locale = array_combine([
-			'locale',
-			'encoding',
-			'title',
-			'native',
-		], $locale);
+	foreach ( $languages as $lang => $language ) {
+		$language = array_combine([ 'locale', 'encoding', 'title', 'native' ], $language)
+			+ [
+				'lang'   => $lang,
+				'plural' => $plurals[ $lang ]
+					?? $plurals[ '_' ],
+			];
 
-		$locale += [
-			'loc'    => $loc,
-			'plural' => $plurals[ $loc ] ?? $plurals[ '_' ],
-		];
-
-		$locales[ $loc ] = $locale;
+		$languages[ $lang ] = $language;
 	}
 
 	return [
-		'locale'          => 'en',
-		'locale_numeric'  => 'C',
-		'locale_fallback' => 'en',
+		'languages' => $languages,
 
-		'locale_suffix' => '.UTF-8',
+		'lang'         => 'en',
+		'lang_default' => 'en',
 
-		'locales' => $locales,
+		'locale_numeric' => 'C',
+		'locale_suffix'  => '.UTF-8',
+
+		'path' => __DIR__ . '/../storage/resources/lang',
 	];
 } )();

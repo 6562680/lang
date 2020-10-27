@@ -10,7 +10,7 @@ $this->di->bindShared(Lang::class, function () {
 	$config = require __DIR__ . '/../../config/lang.php';
 
 	return new Lang(
-		new FileWordRepo(__DIR__ . '/../../storage/resources/lang'),
+		new PhpFileWordRepo(__DIR__ . '/../../storage/resources/lang'),
 		new MemoryWordRepo(),
 
 		$config[ 'locales' ],

@@ -93,8 +93,8 @@ class MemoryWordRepo
 
 		$this->wordsIndex[ $model->key ][] = $lastKey;
 		$this->wordsIndexByGroup[ $model->group ][ $model->key ][] = $lastKey;
-		$this->wordsIndexByLocale[ $model->locale ][ $model->key ][] = $lastKey;
-		$this->wordsIndexByLocaleGroup[ $model->locale . $model->group ][ $model->key ][] = $lastKey;
+		$this->wordsIndexByLocale[ $model->lang ][ $model->key ][] = $lastKey;
+		$this->wordsIndexByLocaleGroup[ $model->lang . $model->group ][ $model->key ][] = $lastKey;
 	}
 
 	/**

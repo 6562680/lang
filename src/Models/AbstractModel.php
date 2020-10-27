@@ -2,23 +2,30 @@
 
 namespace Gzhegow\Lang\Models;
 
-use Gzhegow\Lang\Libs\Php;
+use Gzhegow\Support\Php;
 
 /**
- * Class AbstractEloquentModel
+ * Class AbstractModel
  */
 abstract class AbstractModel
 {
 	/**
+	 * @var Php
+	 */
+	protected $php;
+
+
+	/**
 	 * Constructor
 	 *
+	 * @param Php   $php
 	 * @param mixed ...$args
 	 */
-	public function __construct(...$args)
+	public function __construct(Php $php, ...$args)
 	{
-		$php = new Php();
+		$this->php = $php;
 
-		[ $kwargs ] = $php->kwargs(...$args);
+		[ $kwargs ] = $this->php->kwargs(...$args);
 
 		foreach ( $kwargs as $key => $val ) {
 			if (property_exists($this, $key)) {

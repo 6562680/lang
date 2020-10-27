@@ -11,11 +11,11 @@ interface WordRepoInterface
 {
 	/**
 	 * @param string      $group
-	 * @param string|null $locale
+	 * @param string|null $lang
 	 *
 	 * @return WordModel[]
 	 */
-	public function getByGroup(string $group, string $locale = null) : array;
+	public function getByGroup(string $group, string $lang = null) : array;
 
 	/**
 	 * @param array       $groups
