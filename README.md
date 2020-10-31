@@ -4,7 +4,7 @@
 
 ```
 $di = new \Gzhegow\Di\Di();
-$di->registerProvider(LangProvider::class);
+$di->registerProvider(\Gzhegow\Lang\Di\LangProvider::class);
 ```
 
 При необходимости вы наследуете провайдер и меняете то, что нужно, например, пути к конфигам и ресурсам.
