@@ -39,6 +39,7 @@ class LangProvider extends DeferableProvider
 		});
 	}
 
+
 	/**
 	 * @return array
 	 */
