@@ -3,24 +3,13 @@
 Языковая библиотека
 
 ```
-$di = new Di();
+$di = new \Gzhegow\Di\Di();
+$di->registerProvider(LangProvider::class);
+```
 
-// $di->registerProvider(LangProvider::class);
-$this->di->bindShared(Lang::class, function () {
-	$config = require __DIR__ . '/../../config/lang.php';
+При необходимости вы наследуете провайдер и меняете то, что нужно, например, пути к конфигам и ресурсам.
 
-	return new Lang(
-		new PhpFileWordRepo(__DIR__ . '/../../storage/resources/lang'),
-		new MemoryWordRepo(),
-
-		$config[ 'locales' ],
-		$config[ 'locale' ],
-		$config[ 'locale_numeric' ],
-		$config[ 'locale_fallback' ],
-		$config[ 'locale_suffix' ]
-	);
-});
-
+```
 $lang = $di->get(LangService::class);
 $lang->load('main');
 
@@ -37,17 +26,32 @@ $lang->getOrWord('@main.hello.world'); // 'Hello World'
 
 Функционал:
 ```
-// получить активный язык
-public function getLoc() : string;
-public function getLocale() : array;
+// получить список всех зарегистрированных языков, коллекция массивов
+public function getLanguages() : array
 
-// сменить язык
-public function setLocale(string $locale, string $localeNumeric = null) : void;
+// получить активный язык или язык по-умолчанию
+public function getLang() : string
+public function getLangDefault() : string
 
-// создать языковой путь для формирования URL
-public function localePath(string $locale = null, string $url = null, array $q = null, string $ref = null) : string;
+// получить массив представляющий собой настройки конкретного языка
+public function getLanguageFor(string $lang) : array
+public function getLanguage() : array
+public function getLanguageDefault() : array
 
-// пометить группу ключей как запрашиваемую при ближайшем обращении к репозиторию
+// получить локаль из конфига языков. Так язык может быть "ru", а локаль "ru_RU"
+public function getLocaleFor(string $lang) : string
+public function getLocale() : string
+public function getLocaleDefault() : string
+
+// сменить язык, пакет не сохраняет изменения в сессию, об этом позаботьтесь самостоятельно
+public function setLang(string $lang, string $localeNumeric = null)
+public function setLangDefault(string $lang)
+
+// сформировать ссылку с указанным языком для роутинга или отображения в DOM
+// да, функция может получать ссылки с языками и умно их заменять, убирая из ссылки язык по-умолчанию
+public function languagePath(string $lang = null, string $url = null, array $q = null, string $ref = null) : string
+
+// пометить группу ключей как запрашиваемую при ближайшем обращении к репозиторию. В процессе работы помечаете определенные модули, и в момент ближайшего перевода из базы возьмутся соответствующие списки переводов
 public function load(...$groups) : void;
 
 // получить перевод из репозитория
@@ -65,10 +69,10 @@ public function choiceOrDefault(string $aword, string $number, array $placeholde
 // проверка наличия перевода в репозитории
 public function has(string $aword, string $locale, string $group = null, string &$word = null, string &$result = null) : bool;
 
-// заменить последовательности на переменные
+// заменить последовательности на переменные: если в вашей строке есть переменные в виде `Hello, :name`, она будет заменена на указанную в массиве $placeholders['name']
 public function interpolate(string $word, array $placeholders) : string;
 
-// перевести массив или коллекцию массивов
+// перевести массив или коллекцию массивов. Разумно бывает сначала данные собрать и перед самым отображением - перевести, а не совать функции перевода прямо в файлы шаблонов, заставляя систему бегать в базу переводов сотню раз
 public function translate(array $dct, array $placeholders = [], string $group = null, string $locale = null) : array;
 public function translateMany(iterable $iterable, array $placeholders = [], string $group = null, string $locale = null) : array;
 
