@@ -16,6 +16,13 @@ interface LangInterface
 	 */
 	public function getLanguages() : array;
 
+
+	/**
+	 * @return string[]
+	 */
+	public function getLangs() : array;
+
+
 	/**
 	 * @return string
 	 */
@@ -25,6 +32,7 @@ interface LangInterface
 	 * @return string
 	 */
 	public function getLangDefault() : string;
+
 
 	/**
 	 * @param string $lang
@@ -43,6 +51,7 @@ interface LangInterface
 	 */
 	public function getLanguageDefault() : array;
 
+
 	/**
 	 * @param string $lang
 	 *
@@ -60,6 +69,7 @@ interface LangInterface
 	 */
 	public function getLocaleDefault() : string;
 
+
 	/**
 	 * @param string      $lang
 	 * @param string|null $localeNumeric
@@ -76,6 +86,7 @@ interface LangInterface
 	 * @throws LanguageNotFoundError
 	 */
 	public function setLangDefault(string $lang);
+
 
 	/**
 	 * @param string      $aword
@@ -127,6 +138,7 @@ interface LangInterface
 	 */
 	public function getOrDefault(string $aword, array $placeholders = [], string $default = null, string $group = null, string $lang = null, string &$word = null) : ?string;
 
+
 	/**
 	 * @param string      $aword
 	 * @param string      $lang
@@ -138,12 +150,14 @@ interface LangInterface
 	 */
 	public function has(string $aword, string $lang, string $group = null, string &$word = null, string &$result = null) : bool;
 
+
 	/**
 	 * @param array $groups
 	 *
 	 * @return Lang
 	 */
 	public function load(...$groups);
+
 
 	/**
 	 * @param string|null $lang
@@ -154,6 +168,12 @@ interface LangInterface
 	 * @return string
 	 */
 	public function languagePath(string $lang = null, string $url = null, array $q = null, string $ref = null) : string;
+
+	/**
+	 * @return string
+	 */
+	public function languageRegex() : string;
+
 
 	/**
 	 * @param string      $aword
@@ -208,6 +228,7 @@ interface LangInterface
 	 */
 	public function choiceOrDefault(string $aword, string $number, array $placeholders = [], string $default = null, string $group = null, string $lang = null, string &$word = null) : ?string;
 
+
 	/**
 	 * @param string $word
 	 * @param array  $placeholders
@@ -215,6 +236,7 @@ interface LangInterface
 	 * @return string
 	 */
 	public function interpolate(string $word, array $placeholders) : string;
+
 
 	/**
 	 * @param array       $dct
@@ -235,6 +257,7 @@ interface LangInterface
 	 * @return array
 	 */
 	public function translateMany(iterable $iterable, array $placeholders = [], string $group = null, string $lang = null) : array;
+
 
 	/**
 	 * @param array       $words

@@ -157,11 +157,20 @@ class Lang implements LangInterface
 
 
 	/**
-	 * @return string[]
+	 * @return array[]
 	 */
 	public function getLanguages() : array
 	{
 		return $this->languages;
+	}
+
+
+	/**
+	 * @return string[]
+	 */
+	public function getLangs() : array
+	{
+		return array_keys($this->languages);
 	}
 
 
@@ -314,7 +323,7 @@ class Lang implements LangInterface
 	 * @param string|null $word
 	 *
 	 * @return string
-	 * @throws \Gzhegow\Lang\Exceptions\Error\WordNotFoundError
+	 * @throws WordNotFoundError
 	 */
 	public function get(string $aword, array $placeholders = [], string $group = null, string $lang = null, string &$word = null) : string
 	{
@@ -475,6 +484,28 @@ class Lang implements LangInterface
 
 		return $langPath
 			?: '/';
+	}
+
+	/**
+	 * @return string
+	 */
+	public function languageRegex() : string
+	{
+		$regex = [];
+
+		foreach ( array_keys($this->languages) as $lang ) {
+			if ($this->langDefault === $lang) {
+				$regex[] = '/';
+
+				continue;
+			}
+
+			$regex[] = preg_quote($lang . '/');
+		}
+
+		$regex = implode('|', $regex);
+
+		return $regex;
 	}
 
 
