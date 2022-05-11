@@ -10,13 +10,17 @@ $di->registerProvider(\Gzhegow\Lang\Di\LangProvider::class);
 При необходимости вы наследуете провайдер и меняете то, что нужно, например, пути к конфигам и ресурсам.
 
 ```
+// получаем обьект
 $lang = $di->get(LangService::class);
+
+// ставим переводы модуля MAIN в очередь на загрузку при ближайшем выполнении внутренней команды "переведи это"
 $lang->load('main');
 
-// $lang->get('@main.null'); // @throws
-// $lang->getOrNull('@main.null'); // null
-// $lang->getOrDefault('@main.null', [], 'Text'); // 'Text'
-// $lang->getOrWord('@main.null'); // '@main.null'
+// пользуемся
+$lang->get('@main.null'); // @throws
+$lang->getOrNull('@main.null'); // null
+$lang->getOrDefault('@main.null', [], 'Text'); // 'Text'
+$lang->getOrWord('@main.null'); // '@main.null'
 
 $lang->get('@main.hello.world'); // 'Hello World'
 $lang->getOrNull('@main.hello.world'); // 'Hello World'
